@@ -5,6 +5,9 @@
 #include "audio.h"
 #include "i2s.h"
 #include "adc.h"
+#include "sync.h"
+#include "morph.h"
+#include "wave_bank.h"
 
 #define ADD_MAX_ITER 58
 
@@ -25,12 +28,21 @@ uint32_t add_frq[4][64];
 /* CORDIC stuff */
 hal_cordic_handle_t hCORDIC;
 
+/* morphing */
+struct Morph_st ms_2D, ms_1D;
+
 /*
  * initialize audio generator
  */
 hal_status_t Audio_Init(void)
 {
 	hal_cordic_config_t cordic_config;
+	
+	/* set up sync */
+	if(Sync_init() != HAL_OK)
+	{
+		return HAL_ERROR;
+	}
 
 	if (HAL_CORDIC_Init(&hCORDIC, HAL_CORDIC) != HAL_OK)
 	{
@@ -147,23 +159,30 @@ static inline int16_t get_sin(uint32_t phs)
  */
 void audio_gen(int16_t *dst, uint32_t sz)
 {
+	/* get sync */
+	uint8_t sync_bits = Sync_check();
+	
 	/* adjust for stereo */
 	sz>>=1;
 	
 	/* iterate rise/fall sawtooth gen */
 	switch(mode)
 	{
-		case 1:	/* raw saws */
+		case 1:	/* raw saw & square (naive approach - aliases!) */
 			/* set freq for this pass */
 			frq = ExpoConv(4095 - ADC_GetChl(0));
 			
 			while(sz--)
 			{
+				if(sync_bits & 1)
+					phs = 0;
+				
 				*dst++ = (int16_t)(phs>>16);
-				*dst++ = -(int16_t)(phs>>16);
+				*dst++ = phs & 0x80000000 ? 0x7FFF : 0x8001;
 				
 				/* update NCO */
 				phs += frq;
+				sync_bits >>= 1;
 			}
 			break;
 		
@@ -173,6 +192,9 @@ void audio_gen(int16_t *dst, uint32_t sz)
 			
 			while(sz--)
 			{
+				if(sync_bits & 1)
+					phs = 0;
+				
 				CORDIC->WDATA = phs;
 				uint32_t tmp = CORDIC->RDATA;
 				*dst++ = (int16_t)tmp;
@@ -180,6 +202,7 @@ void audio_gen(int16_t *dst, uint32_t sz)
 				
 				/* update NCO */
 				phs += frq;
+				sync_bits >>= 1;
 			}
 			break;
 		
@@ -193,6 +216,9 @@ void audio_gen(int16_t *dst, uint32_t sz)
 
 			while(sz--)
 			{
+				if(sync_bits & 1)
+					phs = 0;
+				
 				int32_t tmp_phs = phs >> 3;
 				if((tmp_phs & 0xFF000000)==0)
 					live_fm_ratio = fm_ratio;	// to avoid ratio change glitches
@@ -206,6 +232,7 @@ void audio_gen(int16_t *dst, uint32_t sz)
 				
 				/* update NCO */
 				phs += frq;
+				sync_bits >>= 1;
 			}
 			break;
 			
@@ -213,13 +240,13 @@ void audio_gen(int16_t *dst, uint32_t sz)
 			/* set freq for this pass */
 			frq = ExpoConv(4095 - ADC_GetChl(0));
 			
-			/* ratio is number of harmonics - 0 to 12kHz max */
+			/* ratio is number of harmonics - 0 to 24kHz max */
 			ratio_hyst(&fm_ratio, 4095 - ADC_GetChl(2), 6);
 			uint16_t iter = fm_ratio;
 			iter = (iter > ADD_MAX_ITER) ? ADD_MAX_ITER : iter;	// limit total iterations for CPU loading
-		
-			/* limit harmonics to < 15k */
-			uint32_t max_harm = 0x20000000 / frq;
+			
+			/* limit harmonics to < 24k (Fsamp/4) */
+			uint32_t max_harm = 0x40000000 / frq;
 		
 			/* choose which waveform */
 			uint8_t wave = ADC_GetChl(3) / 1024;
@@ -227,6 +254,9 @@ void audio_gen(int16_t *dst, uint32_t sz)
 			/* loop over buffer */
 			while(sz--)
 			{
+				if(sync_bits & 1)
+					phs = 0;
+				
 				int32_t sum = 0;
 				uint32_t tmp_phs = phs;
 				for(int k=0;k<=iter;k++)
@@ -242,6 +272,49 @@ void audio_gen(int16_t *dst, uint32_t sz)
 				
 				/* update NCO */
 				phs += frq;
+				sync_bits >>= 1;
+			}
+			break;
+			
+		case 5:
+		case 6:
+		case 7:	/* 2D & 1D morphing */
+			/* choose bank */
+			switch(mode)
+			{
+				case 5:
+					ms_2D.wave_bank = (int16_t *)&wave_bank[0];
+					ms_1D.wave_bank = (int16_t *)&wave_bank[0];
+					break;
+				
+				case 6:
+					ms_2D.wave_bank = (int16_t *)&wave_bank[64<<8];
+					ms_1D.wave_bank = (int16_t *)&wave_bank[64<<8];
+					break;
+				
+				case 7:
+					ms_2D.wave_bank = (int16_t *)&wave_bank[128<<8];
+					ms_1D.wave_bank = (int16_t *)&wave_bank[128<<8];
+					break;
+			}
+			
+			/* assign CVs */
+			frq = ExpoConv(4095 - ADC_GetChl(0));
+			morph_set_2D(&ms_2D, (4095 - ADC_GetChl(1))<<4, (4095 - ADC_GetChl(2))<<4);
+			morph_set_1D(&ms_1D, (4095 - ADC_GetChl(3))<<4);
+		
+			/* loop over buffer */
+			while(sz--)
+			{
+				if(sync_bits & 1)
+					phs = 0;
+				
+				*dst++ = morph_2D(&ms_2D, phs);
+				*dst++ = morph_1D(&ms_1D, phs);
+				
+				/* update NCO */
+				phs += frq;
+				sync_bits >>= 1;
 			}
 			break;
 			
@@ -253,4 +326,3 @@ void audio_gen(int16_t *dst, uint32_t sz)
 			}
 	}
 }
-

@@ -134,8 +134,8 @@ int main(void)
 	cpu_timer = cyclegoal_ms(200);
 	while (1)
 	{
-		/* check button for mode change */
-		if(Button_re())
+		/* check panel button for mode change */
+		if(Button_re(BTN_PANEL))
 		{
 			audio_mode++;
 			audio_mode = audio_mode > 7 ? 1 : audio_mode;
@@ -146,10 +146,27 @@ int main(void)
 			Audio_SetMode(audio_mode);
 		}
 		
+		/* check BOOT0 button for whatever */
+		if(Button_re(BTN_BOOT0))
+		{
+			printf("\n\rBOOT0 pressed\n\r");
+		}
+		
 		/* check if it's time to save the mode */
 		if(eepend && !cyclecheck(eegoal))
 		{
-			eeprom_write(audio_mode);
+			if(ADC_PauseConv(1) != HAL_OK)
+			{
+				printf("ADC_PauseConv(1) failed\n\r");
+			}
+			if(eeprom_write(audio_mode) != HAL_OK)
+			{
+				printf("eeprom_write() failed\n\r");
+			}
+			if(ADC_PauseConv(0) != HAL_OK)
+			{
+				printf("ADC_PauseConv(0) failed\n\r");
+			}
 			eepend = 0;
 			printf("\nSaved mode %d \n\r", audio_mode);
 		}

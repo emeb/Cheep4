@@ -144,14 +144,14 @@ hal_status_t MY_EDATA_ProgramByAddr(hal_flash_handle_t *hflash, uint16_t *flash_
 /*
  * write 15 bits to the next available half-word in the reserved flash page
  */
-void eeprom_write(uint16_t data)
+hal_status_t eeprom_write(uint16_t data)
 {
 	uint16_t *word = (uint16_t *)(EEPROM_BASE);
 	int16_t cnt = 0;
 	
 	/* mask top bit to flag valid data */
 	data &= 0x7FFF;
-	printf("eeprom_write 0x%04X\n\r", data);
+	printf("\n\reeprom_write 0x%04X\n\r", data);
 	
 	/* find next available half-word in the page */
 	while(cnt < EEPROM_PAGE_WORDS)
@@ -175,7 +175,7 @@ void eeprom_write(uint16_t data)
 		if (HAL_FLASH_EDATA_EraseByAddr(&hFLASH, EEPROM_BASE, EEPROM_PAGE_WORDS * sizeof(uint16_t), TIMEOUT_MS) != HAL_OK)
 		{
 			printf("HAL_FLASH_EDATA_EraseByAddr() failed\n\r");
-			return;
+			return HAL_ERROR;
 		}
 		else
 		{
@@ -191,10 +191,12 @@ void eeprom_write(uint16_t data)
 	if(MY_EDATA_ProgramByAddr(&hFLASH, word, &data, TIMEOUT_MS) != HAL_OK)
 	{
 		printf("MY_EDATA_ProgramByAddr() failed\n\r");
-		return;
+		return HAL_ERROR;
 	}
 	else
 		printf("OK\n\r");
+	
+	return HAL_OK;
 }
 
 /*

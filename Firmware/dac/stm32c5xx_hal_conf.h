@@ -208,13 +208,13 @@ extern "C" {
   * @{
   */
 /* ########################## HAL_DAC Config #################################### */
-#define USE_HAL_DAC_MODULE                      0U
+#define USE_HAL_DAC_MODULE                      1U
 #define USE_HAL_DAC_CLK_ENABLE_MODEL            HAL_CLK_ENABLE_NO
-#define USE_HAL_DAC_REGISTER_CALLBACKS          0U
+#define USE_HAL_DAC_REGISTER_CALLBACKS          1U
 #define USE_HAL_DAC_USER_DATA                   0U
 #define USE_HAL_DAC_GET_LAST_ERRORS             0U
-#define USE_HAL_DAC_DMA                         0U
-#define USE_HAL_DAC_DUAL_CHANNEL                0U
+#define USE_HAL_DAC_DMA                         1U
+#define USE_HAL_DAC_DUAL_CHANNEL                1U
 /**
   * @}
   */
@@ -287,23 +287,23 @@ extern "C" {
 /* ########################## HAL_FLASH Config ################################## */
 #define USE_HAL_FLASH_MODULE                    1U
 #define USE_HAL_FLASH_CLK_ENABLE_MODEL          HAL_CLK_ENABLE_NO
-#define USE_HAL_FLASH_REGISTER_CALLBACKS        1U
-#define USE_HAL_FLASH_USER_DATA                 1U
+#define USE_HAL_FLASH_REGISTER_CALLBACKS        0U
+#define USE_HAL_FLASH_USER_DATA                 0U
 #define USE_HAL_FLASH_GET_LAST_ERRORS           0U
 /* Use the FLASH program by address feature */
-#define USE_HAL_FLASH_PROGRAM_BY_ADDR           1U
+#define USE_HAL_FLASH_PROGRAM_BY_ADDR           0U
 /* Use the FLASH erase by address feature */
-#define USE_HAL_FLASH_ERASE_BY_ADDR             1U
+#define USE_HAL_FLASH_ERASE_BY_ADDR             0U
 /* Use the FLASH erase by PAGE feature */
-#define USE_HAL_FLASH_ERASE_PAGE                1U
+#define USE_HAL_FLASH_ERASE_PAGE                0U
 /* Use the FLASH bank erase feature */
 #define USE_HAL_FLASH_ERASE_BANK                0U
 /* Use the FLASH mass erase feature */
 #define USE_HAL_FLASH_MASS_ERASE                0U
 /* Use ECC errors handling APIs */
-#define USE_HAL_FLASH_ECC                       1U
+#define USE_HAL_FLASH_ECC                       0U
 /* Use FLASH HAL API for EDATA */
-#define USE_HAL_FLASH_OB_EDATA                  1U
+#define USE_HAL_FLASH_OB_EDATA                  0U
 /**
   * @}
   */

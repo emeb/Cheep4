@@ -27,6 +27,15 @@ static hal_dma_handle_t hLPDMA1_CH0;
 
 int16_t adc_buffer[ADC_BUFSZ], adc_proc_buffer[ADC_BUFSZ];
 
+typedef enum
+{
+	ADC_RESET,
+	ADC_RUNNING,
+	ADC_PAUSED,
+} adc_state_t;
+
+static adc_state_t adc_state = ADC_RESET;
+
 /*
  * ADC DMA TC callback
  */
@@ -192,7 +201,44 @@ hal_status_t ADC_Init(void)
 		return HAL_ERROR;
 	}
 	
+	adc_state = ADC_RUNNING;
+	
 	return HAL_OK;
+}
+
+/*
+ * Pause / Play on running ADC to avoid sync issues caused by flash write
+ */
+hal_status_t ADC_PauseConv(uint8_t enable)
+{
+	hal_status_t status = HAL_OK;
+	if(enable)
+	{
+		if(adc_state == ADC_RUNNING)
+		{
+			printf("Stopping ADC\n\r");
+			if((status = HAL_ADC_REG_StopConv_DMA(&hADC1)) == HAL_OK)
+			{
+				LL_DMA_DisableChannel((DMA_Channel_TypeDef *)((uint32_t)hLPDMA1_CH0.instance));
+				adc_state = ADC_PAUSED;
+			}
+		}
+	}
+	else
+	{
+		if(adc_state == ADC_PAUSED)
+		{
+			printf("Restarting ADC\n\r");
+			if((status = HAL_ADC_REG_StartConv_DMA(&hADC1,
+					(uint8_t *)adc_buffer,
+			ADC_BUFSZ * sizeof(uint16_t))) == HAL_OK)
+			{
+				adc_state = ADC_RUNNING;
+			}
+		}
+	}
+	
+	return status;
 }
 
 /*

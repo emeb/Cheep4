@@ -10,7 +10,7 @@
 #include "mx.h"
 
 hal_status_t eeprom_init(void);
-void eeprom_write(uint16_t data);
+hal_status_t eeprom_write(uint16_t data);
 uint16_t eeprom_read(void);
 
 #endif

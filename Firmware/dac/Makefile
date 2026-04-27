@@ -6,14 +6,12 @@ VPATH = .:../common:../CMSIS:../hal:../ll:../util
 
 # Object files
 OBJECTS = 	startup_stm32c542xx.o system_stm32c5xx.o syscalls.o sysmem.o \
-			main.o mx.o led.o usart.o printf.o cyclesleep.o i2s.o sync.o \
-			dsp_lib.o morph.o \
-			adc.o pcm5100a.o audio.o button.o debounce.o expo.o eeprom.o \
+			main.o mx.o led.o usart.o printf.o cyclesleep.o dac.o audio.o \
 			stm32c5xx_hal.o stm32c5xx_hal_cortex.o stm32c5xx_hal_gpio.o \
 			stm32c5xx_hal_rcc.o stm32c5xx_hal_pwr.o stm32c5xx_hal_usart.o \
 			stm32c5xx_hal_uart.o stm32c5xx_hal_icache.o stm32c5xx_hal_flash_itf.o \
-			stm32c5xx_hal_adc.o stm32c5xx_hal_i2s.o stm32c5xx_hal_dma.o \
-			stm32c5xx_hal_cordic.o stm32c5xx_hal_flash.o stm32c5xx_hal_tim.o 
+			stm32c5xx_hal_dac.o stm32c5xx_hal_dma.o stm32c5xx_hal_cordic.o \
+			stm32c5xx_hal_tim.o
 
 # Linker script
 LDSCRIPT = stm32c542xc_flash.ld

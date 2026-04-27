@@ -11,6 +11,7 @@
 #define ADC_BUFSZ 4
 
 hal_status_t ADC_Init(void);
+hal_status_t ADC_PauseConv(uint8_t enable);
 int16_t ADC_GetChl(uint8_t chl);
 
 #endif
