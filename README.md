@@ -68,11 +68,11 @@ Firmware included with this project includes test code for all the critical MCU 
 
 ### Prerequisites
 
-- Arm GCC compiler
+- [Arm GCC compiler](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)
 
-- ST-Link programmer
+- [ST-Link programmer](https://www.st.com/en/development-tools/hardware-debugger-and-programmer-tools-for-stm32/products.html) hardware interface - currently the only low-cost programmer/debugger that interfaces to the STM32C5 family MCUs.
 
-- STM32 Cube Programmer application installed (needed for interfacing to ST-Link programming hardware)
+- [STM32 Cube Programmer]([https://www.st.com/en/development-tools/stm32cubeprog.html) application installed - needed for interfacing to ST-Link programmer hardware. 
 
 ### Building
 
@@ -128,11 +128,11 @@ Alongside the C5 family of parts, ST has introduced a new configuration and code
 
 ###### CubeMX2
 
-STM32 CubeMX is the hardware configuration tool that ST has provided for many years which is an essential part of bringing up a new hardware design because it helps accelerate the setup of all the hardware resources on STM32 parts. CubeMX2 fills the exact same role for the C5 family. It has a significantly different UI from the older CubeMX application but the changes aren't particularly confusing - if you know how to drive CubeMX then it won't take too much effort to learn CubeMX2. The main difference is in the structure of the generated code. CubeMX2 has a radically different project architecture, with initialization code for every MCU subsystem broken out into separate files that are hierarchically separate from the user application code.
+[STM32 CubeMX](https://community.st.com/t5/developer-news/introducing-stm32cubemx2-a-new-flavor-of-stm32cubemx-tool/ba-p/885793) is the hardware configuration tool that ST has provided for many years which is an essential part of bringing up a new hardware design because it helps accelerate the setup of all the hardware resources on STM32 parts. CubeMX2 fills the exact same role for the C5 family. It has a significantly different UI from the older CubeMX application but the changes aren't particularly confusing - if you know how to drive CubeMX then it won't take too much effort to learn CubeMX2. The main difference is in the structure of the generated code. CubeMX2 has a radically different project architecture, with initialization code for every MCU subsystem broken out into separate files that are hierarchically separate from the user application code.
 
 ##### HAL2
 
-The original HAL (Hardware Abstraction Library) was the follow up to ST's earlier Standard Peripheral Library, both of which encapsulated the necessary driver code for initializing and using the peripherals on every STM32 MCU. HAL2 is similar to HAL and provides most of the same resources, but is sufficiently different in details that code written for HAL on older devices will not port without some effort - many of the function calls have changed in name and parameters so some careful study of the HAL2 source will be needed to ensure that ported code operates as required. 
+The original HAL (Hardware Abstraction Library) was the follow up to ST's earlier Standard Peripheral Library, both of which encapsulated the necessary driver code for initializing and using the peripherals on every STM32 MCU. [HAL2](https://dev.st.com/stm32cube-docs/embedded-software/2.0.0/en/architecture/hal2-architecture.html) is similar to HAL and provides most of the same resources, but is sufficiently different in details that code written for HAL on older devices will not port without some effort - many of the function calls have changed in name and parameters so some careful study of the HAL2 source will be needed to ensure that ported code operates as required. 
 
 There are some significant improvements in HAL2 however - primarily in build-time settings to optimize resource usage. Every peripheral subsystem can be configured to enable or disable features such as assertion, debuggin, DMA, etc. as required in the target application. HAL2 seems to produce tighter firmware and the API enables fairly straightforward user code that appears sturcturally simple and is fairly easy to optimize.
 
@@ -189,3 +189,17 @@ The C542 includes a full-speed (12Mbps) device/host port which has been configur
 ##### Debug / Log port
 
 SWD programming / debugging and USART1 logging are provided on an ST / ARM standard 14-pin 0.127mm connector. Additionally four GPIO testpoints are provided for diagnostic signalling, including timers, clock outputs and DAC voltages.
+
+## PCB Design notes
+
+The V0.1 PCB design has a few issues that should be corrected if ever updated:
+
+- Some 0402 footprints crept in due to copy/paste from other board designs. These should be converted to 0603.
+
+- Provide option to bypass the PCM5100A audio DAC and allow the STM32C542 on-chip dual 12-bit DAC to be used instead. This would entail adding DNI resistors for the -5V reference voltage to center the 0-3.3V DAC outputs on 0V, as well as solderblob jumpers to select either MCU DAC or PCM5100A outputs.
+
+- Add testpoints on the currently unconnected PC14/15 pins for additional diagnostics or connection of a 32kHz crystal.
+
+- Consider an SMPS regulator to efficiently reduce the Eurorack +12V to +5V instead of the LDO used on V0.1.
+
+- Consider TVS diode protection on the USB device port.
